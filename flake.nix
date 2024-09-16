@@ -13,13 +13,21 @@
   {
     lib = (import ./lib lib).public;
 
-    packages = forAllSystems (system: rec {
-      site = import ./example {
-        fh-lib = self.lib;
-        pkgs = nixpkgs.legacyPackages.${system};
-      };
+    packages = forAllSystems (system:
+      let
+        args = {
+          fh-lib = self.lib;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
 
-      default = site;
+        local-site = import ./example args;
+
+        github-pages-site = import ./example/github-pages-site.nix args;
+      in
+      {
+        inherit local-site github-pages-site;
+
+        default = local-site;
     });
   };
 }
