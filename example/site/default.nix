@@ -10,7 +10,7 @@ html.doctype
   (e "head" {} [
     (e "meta" { charset="UTF-8"; } null)
     (e "meta" { name="viewport"; content="width=device-width, initial-scale=1.0"; } null)
-    (e "title" {} "Test <Page> :)")
+    (e "title" {} "Test <Page> </title> :)")
     (e "link" { rel="stylesheet"; href=referenceCSS ./css/style.nix; } null)
     (e "link" { rel="stylesheet"; href=referenceCSS ./css/style2.css; } null)
     (e "link" { rel="stylesheet"; href=referenceSCSS ./css/style3.scss; } null)
@@ -27,7 +27,7 @@ html.doctype
     ''))
   ])
   (e "body" {} [
-    (e "p" { id="test"; } "<> > &lt;&gt; : escaping by default")
+    (e "p" { id="t<e&st"; } "<> > &lt;&gt; : escaping by default")
   ])
 ])
 ]

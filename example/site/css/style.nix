@@ -2,7 +2,7 @@
 html {
   background: black;
 }
-#test {
+#t\<e\&st {
   text-decoration: underline;
 }
 ''
