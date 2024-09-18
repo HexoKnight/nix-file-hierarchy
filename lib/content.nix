@@ -139,10 +139,16 @@ let
         text = f content.result.text;
       };
     };
+
+  /**
+    Unsafe because this discards any page references so
+    should only be used for informational purposes.
+  */
+  unsafeGetContentText = arg: (mkContent arg).result.text;
 in
 {
   inherit mkContent equalContents;
   public = {
-    inherit getContentData setContentDataByPath mapContentText;
+    inherit getContentData setContentDataByPath mapContentText unsafeGetContentText;
   };
 }
