@@ -26,8 +26,9 @@ let
     attributes,
     content,
     metadata,
+    checks,
     ...
-  }:
+  }@attrs:
   let
     contentList = lib.toList content;
     escapedContentList = map (value:
@@ -39,9 +40,17 @@ let
       else
         escapeContent content
     ) contentList;
+
+    checkResults = builtins.map (f: f attrs) checks;
+    failedChecks = lib.filter (f: f != true) checkResults;
+    numFailedChecks = lib.length failedChecks;
   in
   {
     parts =
+      assert lib.assertMsg (numFailedChecks == 0) (lib.concatMapStringsSep "\n" toString
+        [ "${if numFailedChecks == 1 then "a check" else "${numFailedChecks} checks"} for a '${name}' element failed:" ]
+        ++ failedChecks
+      );
       [ "<${name}" ]
       ++ lib.mapAttrsToList attributeToContent attributes
       ++ (
@@ -55,15 +64,30 @@ let
     data.htmlMetadata = metadata;
   };
 in
-{
-  mkElement = name: attributes: content:
+rec {
+  mkElementAttrs = {
+    name,
+    attributes,
+    content,
+
+    checks ? [],
+    metadata ? {},
+  }:
   lib.setType elementType {
-    inherit name attributes content;
+    inherit name attributes content checks;
     __toContent = elementAttrsToContent;
     metadata = {
+      # the __toContent will handle escaping when necessary
       escaped = true;
-    };
+    } // metadata;
   };
+
+  mkElement = name: attributes: content: mkElementAttrs {
+    inherit name attributes content;
+  };
+
+  addChecks = checks: element: element // { checks = element.checks ++ checks; };
+  addCheck = check: element: addChecks [ check ];
 
   mkRaw = content: setContentDataByPath [ "htmlMetadata" "escaped" ] true (mkContent content);
 
@@ -73,6 +97,6 @@ in
   doctype = "<!DOCTYPE html>";
 
   public = {
-    inherit mkElement mkRaw doctype;
+    inherit mkElement addChecks addCheck mkRaw doctype;
   };
 }
