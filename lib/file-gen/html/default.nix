@@ -43,7 +43,7 @@ let
         ++ failedChecks
       ));
 
-    contentList = lib.toList content;
+    rawContentList = lib.toList content;
     escapedContentList = map (value:
       let
         content = mkContent value;
@@ -52,14 +52,16 @@ let
         content
       else
         escapeContent content
-    ) contentList;
+    ) rawContentList;
+
+    contentList = if metadata.escapeContent then escapedContentList else rawContentList;
 
     checkedContent = mapContentText (text:
       assert assertChecks contentChecks text;
       text
-    ) escapedContentList;
+    ) contentList;
 
-    finalContentList = if contentChecks == [] then escapedContentList else [ checkedContent ];
+    finalContentList = if contentChecks == [] then contentList else [ checkedContent ];
   in
   {
     parts =
@@ -95,6 +97,7 @@ rec {
     metadata = {
       # the __toContent will handle escaping when necessary
       escaped = true;
+      escapeContent = true;
     } // metadata;
   };
 
