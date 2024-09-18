@@ -1,4 +1,4 @@
-{ lib, mapContentText, getContentData, setContentDataByPath, mkContent, ... }:
+{ lib, mapContentText, getContentData, setContentDataByPath, mkContent, unsafeGetContentText, ... }@fh-lib:
 
 let
   elementType = "html-element";
@@ -104,6 +104,15 @@ rec {
   mkElement = name: attributes: content: mkElementAttrs {
     inherit name attributes content;
   };
+
+  elementToString = { shallow ? true, }: { name, attributes, content, ... }@element:
+    if ! shallow then unsafeGetContentText element else
+    let
+      startTag = "<${name}${if attributes == {} then "" else " ..."}>";
+      betweenContent = if content == [] then "" else " ... ";
+      endTag = "</${name}>";
+    in
+    "${startTag}${if content == null then "" else betweenContent + endTag}";
 
   addChecks = checks: element: element // { checks = element.checks ++ checks; };
   addCheck = check: element: addChecks [ check ];
