@@ -89,5 +89,7 @@ let
     };
 in
 {
-  inherit mkPage referencePage;
+  public = {
+    inherit mkPage referencePage;
+  };
 }

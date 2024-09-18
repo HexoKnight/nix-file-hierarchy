@@ -1,8 +1,6 @@
 { lib, mapContentText, getContentData, setContentDataByPath, mkContent, ... }:
 
 let
-  
-
   elementType = "html-element";
 
   isElement = lib.isType elementType;
@@ -73,4 +71,8 @@ in
   # but this is the only non-legacy way specified by the
   # html standard: https://html.spec.whatwg.org/#syntax-doctype
   doctype = "<!DOCTYPE html>";
+
+  public = {
+    inherit mkElement mkRaw doctype;
+  };
 }

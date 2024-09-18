@@ -141,5 +141,8 @@ let
     };
 in
 {
-  inherit mkContent equalContents getContentData setContentDataByPath mapContentText;
+  inherit mkContent equalContents;
+  public = {
+    inherit getContentData setContentDataByPath mapContentText;
+  };
 }
