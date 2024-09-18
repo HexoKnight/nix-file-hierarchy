@@ -25,11 +25,24 @@ let
     name,
     attributes,
     content,
-    metadata,
+
     checks,
+    contentChecks,
+    metadata,
     ...
   }@attrs:
   let
+    assertChecks = checks: arg:
+      let
+        checkResults = builtins.map (f: f arg) checks;
+        failedChecks = lib.filter (f: f != true) checkResults;
+        numFailedChecks = lib.length failedChecks;
+      in
+      lib.assertMsg (numFailedChecks == 0) (lib.concatMapStringsSep "\n" toString (
+        [ "${if numFailedChecks == 1 then "a check" else "${numFailedChecks} checks"} for a '${name}' element failed:" ]
+        ++ failedChecks
+      ));
+
     contentList = lib.toList content;
     escapedContentList = map (value:
       let
@@ -41,16 +54,16 @@ let
         escapeContent content
     ) contentList;
 
-    checkResults = builtins.map (f: f attrs) checks;
-    failedChecks = lib.filter (f: f != true) checkResults;
-    numFailedChecks = lib.length failedChecks;
+    checkedContent = mapContentText (text:
+      assert assertChecks contentChecks text;
+      text
+    ) escapedContentList;
+
+    finalContentList = if contentChecks == [] then escapedContentList else [ checkedContent ];
   in
   {
     parts =
-      assert lib.assertMsg (numFailedChecks == 0) (lib.concatMapStringsSep "\n" toString
-        [ "${if numFailedChecks == 1 then "a check" else "${numFailedChecks} checks"} for a '${name}' element failed:" ]
-        ++ failedChecks
-      );
+      assert assertChecks checks attrs;
       [ "<${name}" ]
       ++ lib.mapAttrsToList attributeToContent attributes
       ++ (
@@ -59,7 +72,7 @@ let
           # but it's ignored otherwise so may as well
           [ " />" ]
         else
-          [ ">" ] ++ escapedContentList ++ [ "</${name}>" ]
+          [ ">" ] ++ finalContentList ++ [ "</${name}>" ]
       );
     data.htmlMetadata = metadata;
   };
@@ -71,10 +84,13 @@ rec {
     content,
 
     checks ? [],
+    contentChecks ? [],
     metadata ? {},
   }:
   lib.setType elementType {
-    inherit name attributes content checks;
+    inherit
+      name attributes content
+      checks contentChecks;
     __toContent = elementAttrsToContent;
     metadata = {
       # the __toContent will handle escaping when necessary
