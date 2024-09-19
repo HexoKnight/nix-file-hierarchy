@@ -14,8 +14,6 @@ let
     You shouldn't need to use this function for anything other than foreign and custom elements.
     If you do, open an issue.
 
-    The type used in docs is `Element` and it is `Content-like` (ie. it can be converted to Content).
-
     # Inputs
     `name`
     : name of the element
@@ -27,7 +25,8 @@ let
 
     # Type
     ```
-    element :: string -> attrset -> Content -> Element
+    ElementContent :: Element | Content | [ Element | Content ]
+    element :: string -> attrset -> ElementContent -> Element
     ```
   */
   element = name: attributes: content: mkElementAttrs {

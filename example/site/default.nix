@@ -1,4 +1,4 @@
-{ lib, fullSitePathRoot, referenceCSS, referenceSCSS, referencePage, file-gen, ...}:
+{ lib, fullSitePathRoot, referenceCSS, referenceSCSS, referencePage, file-gen, mapContentText, ...}:
 let
   inherit (file-gen) html;
 
@@ -6,7 +6,7 @@ let
 in
 [
 html.doctype
-(e.html { lang="en"; } [
+(html.elementToContent (e.html { lang="en"; } [
   (e.head {} [
     (e.meta { charset="UTF-8"; })
     (e.meta { name="viewport"; content="width=device-width, initial-scale=1.0"; })
@@ -31,5 +31,5 @@ html.doctype
   (e.body {} [
     (e.p { id="t<e&st"; } "<> > &lt;&gt; : escaping by default")
   ])
-])
+]))
 ]

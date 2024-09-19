@@ -3,6 +3,8 @@
 let
   elementType = "html-element";
 
+  isElement = lib.isType elementType;
+
   attributeToContent = name: value:
   if value == true then [ " ${name}" ]
   else if value == false then []
@@ -29,9 +31,9 @@ let
     mkRaw :: Content-like -> Content
     ```
   */
-  mkRaw = setContentDataByPath [ "htmlMetadata" "escaped" ] true;
+  mkRaw = setContentDataByPath [ "htmlMetadata" "raw" ] true;
 
-  elementAttrsToContent = {
+  elementAttrsToList = {
     name,
     attributes,
     content,
@@ -53,18 +55,17 @@ let
         ++ failedChecks
       ));
 
-    rawContentList = lib.toList content;
-    escapedContentList = map (value:
+    contentList = map (value:
       let
         content = mkContent value;
       in
-      if (getContentData content).htmlMetadata.escaped or false then
+      if isElement value then
+        elementAttrsToList value
+      else if (getContentData content).htmlMetadata.raw or (! metadata.escapeContent) then
         content
       else
         escapeContent content
-    ) rawContentList;
-
-    contentList = if metadata.escapeContent then escapedContentList else rawContentList;
+    ) (lib.flatten content);
 
     checkedContent = mapContentText (text:
       assert assertChecks contentChecks text;
@@ -73,24 +74,20 @@ let
 
     finalContentList = if contentChecks == [] then contentList else [ checkedContent ];
   in
-  {
-    parts =
-      assert assertChecks checks attrs;
-      [ "<${name}" ]
-      ++ lib.mapAttrsToList attributeToContent attributes
-      ++ (
-        if content == null then
-          # / is only required on foreign elements
-          # but it's ignored otherwise so may as well
-          [ " />" ]
-        else
-          [ ">" ] ++ finalContentList ++ [ "</${name}>" ]
-      );
-    data.htmlMetadata = metadata;
-  };
+  assert assertChecks checks attrs;
+  [ "<${name}" ]
+  ++ lib.mapAttrsToList attributeToContent attributes
+  ++ (
+    if content == null then
+      # / is only required on foreign elements
+      # but it's ignored otherwise so may as well
+      [ " />" ]
+    else
+      [ ">" ] ++ finalContentList ++ [ "</${name}>" ]
+  );
 in
 rec {
-  isElement = lib.isType elementType;
+  inherit isElement;
 
   mkElementAttrs = {
     name,
@@ -105,12 +102,30 @@ rec {
     inherit
       name attributes content
       checks contentChecks;
-    __toContent = elementAttrsToContent;
     metadata = {
-      # the __toContent will handle escaping when necessary
-      escaped = true;
+      raw = false;
       escapeContent = true;
     } // metadata;
+  };
+
+  /**
+    Converts a html element into Content.
+
+    Be aware that although Elements can be converted to Content, the conversion is one-way
+    and afterwards, the element is just treated as raw text so can only be properly nested
+    within another element using `mkRaw`.
+
+    # Inputs
+    `element`
+    : html element
+
+    # Type
+    ```
+    elementToContent :: Element -> Content
+    ```
+  */
+  elementToContent = element: {
+    parts = elementAttrsToList element;
   };
 
   elementToString = { shallow ? true, }: { name, attributes, content, ... }@element:
@@ -149,7 +164,7 @@ rec {
   elements = import ./elements.nix fh-lib;
 
   public = {
-    inherit addChecks addCheck mkRaw doctype;
+    inherit addChecks addCheck mkRaw doctype elementToContent;
     inherit (elements) element;
   };
 }
