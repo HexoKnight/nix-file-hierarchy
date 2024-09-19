@@ -110,9 +110,35 @@ rec {
     in
     "${startTag}${if content == null then "" else betweenContent + endTag}";
 
+  /**
+    Add checks that take the element attrset and return true for success or a string describing the failure.
+
+    # Inputs
+    `checks`
+    : checks to add
+    `element`
+    : html element to add the checks to
+
+    # Type
+    ```
+    addChecks :: [(Element -> true|string)] -> Element -> Element
+    ```
+  */
   addChecks = checks: element: element // { checks = element.checks ++ checks; };
   addCheck = check: element: addChecks [ check ];
 
+  /**
+    Return the input content as is (ie. without html escaping).
+
+    # Inputs
+    `content`
+    : Content-like input
+
+    # Type
+    ```
+    mkRaw :: Content-like -> Content
+    ```
+  */
   mkRaw = content: setContentDataByPath [ "htmlMetadata" "escaped" ] true (mkContent content);
 
   # there are technically other ways to write the DOCTYPE
