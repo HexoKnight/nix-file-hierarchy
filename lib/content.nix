@@ -73,7 +73,11 @@ let
     if isContent content then
       content
     else if content ? __toContent then
-        mkContent (content.__toContent content)
+      mkContent (content.__toContent content)
+    else if content ? _type then
+      lib.trace "relevant attrset:"
+      lib.trace content
+      throw "tried to convert an attrset of type '${content._type}' to content"
     else mkContentAttrs (
       if builtins.isString content then
         { text = content; }
