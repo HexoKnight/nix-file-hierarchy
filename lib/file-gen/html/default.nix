@@ -154,6 +154,32 @@ rec {
   addChecks = checks: element: element // { checks = element.checks ++ checks; };
   addCheck = check: element: addChecks [ check ];
 
+  /**
+    Create html content.
+    This is literally just a shorthand for:
+    ```nix
+    [
+      doctype
+      (elementToContent (element.html <args...>))
+    ]
+    ```
+
+    # Inputs
+    `attributes`
+    : attributes to add to the toplevel html element
+    `content`
+    : content to add to the toplevel html element
+
+    # Type
+    ```
+    mkHtml :: attrset -> ElementContent -> Content
+    ```
+  */
+  mkHtml = attributes: content: [
+    doctype
+    (elementToContent (elements.element.html attributes content))
+  ];
+
   inherit mkRaw;
 
   # there are technically other ways to write the DOCTYPE
@@ -164,7 +190,7 @@ rec {
   elements = import ./elements.nix fh-lib;
 
   public = {
-    inherit addChecks addCheck mkRaw doctype elementToContent;
+    inherit elementToContent addChecks addCheck mkHtml mkRaw doctype;
     inherit (elements) element;
   };
 }

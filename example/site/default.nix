@@ -4,9 +4,7 @@ let
 
   e = html.element;
 in
-[
-html.doctype
-(html.elementToContent (e.html { lang="en"; } [
+html.mkHtml { lang="en"; } [
   (e.head {} [
     (e.meta { charset="UTF-8"; })
     (e.meta { name="viewport"; content="width=device-width, initial-scale=1.0"; })
@@ -37,5 +35,4 @@ html.doctype
     (mapContentText lib.toUpper (html.elementToContent (e.p {} " <> this will be escaped :(")))
     (html.mkRaw (mapContentText lib.toUpper (html.elementToContent (e.p {} " <> this will not be escaped :)"))))
   ])
-]))
 ]
