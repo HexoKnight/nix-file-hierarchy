@@ -46,7 +46,7 @@ let
 
       # Type
       ```
-      ${name} :: attrset -> Content -> Element
+      ${name} :: attrset -> ElementContent -> Element
       ```
     */
     attributes: content: mkElementAttrs {
@@ -132,7 +132,7 @@ let
 
       # Type
       ```
-      ${name} :: attrset -> Content -> Element
+      ${name} :: attrset -> ElementContent -> Element
       ```
 
       See: https://html.spec.whatwg.org/#escapable-raw-text-elements
@@ -155,7 +155,7 @@ let
 
       # Type
       ```
-      ${name} :: attrset -> Content -> Element
+      ${name} :: attrset -> ElementContent -> Element
       ```
 
       See: https://html.spec.whatwg.org/#raw-text-elements
