@@ -2,7 +2,7 @@
 let
   inherit (file-gen) html;
 
-  e = html.mkElement;
+  e = html.element;
 in
 [
 html.doctype

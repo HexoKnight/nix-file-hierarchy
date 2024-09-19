@@ -3,8 +3,6 @@
 let
   elementType = "html-element";
 
-  isElement = lib.isType elementType;
-
   attributeToContent = name: value:
   if value == true then [ " ${name}" ]
   else if value == false then []
@@ -80,6 +78,8 @@ let
   };
 in
 rec {
+  isElement = lib.isType elementType;
+
   mkElementAttrs = {
     name,
     attributes,
@@ -101,10 +101,6 @@ rec {
     } // metadata;
   };
 
-  mkElement = name: attributes: content: mkElementAttrs {
-    inherit name attributes content;
-  };
-
   elementToString = { shallow ? true, }: { name, attributes, content, ... }@element:
     if ! shallow then unsafeGetContentText element else
     let
@@ -124,7 +120,10 @@ rec {
   # html standard: https://html.spec.whatwg.org/#syntax-doctype
   doctype = "<!DOCTYPE html>";
 
+  elements = import ./elements.nix fh-lib;
+
   public = {
-    inherit mkElement addChecks addCheck mkRaw doctype;
+    inherit addChecks addCheck mkRaw doctype;
+    inherit (elements) element;
   };
 }
