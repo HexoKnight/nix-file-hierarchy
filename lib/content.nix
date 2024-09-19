@@ -53,7 +53,7 @@ let
             use `builtins.readFile` to insert a file as text
           '';
           result
-        ) parts;
+        ) (lib.flatten parts);
         results = lib.zipAttrsWith (_name: values: values) evaledParts;
       in
       {
