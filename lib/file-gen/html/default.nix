@@ -8,16 +8,28 @@ let
   else if value == false then []
   else [
     " ${name}='"
-    # works perfectly for HTML as well
-    # (kinda obvious but felt worth noting)
-    (mapContentText lib.escapeXML value)
+    (escapeContent value)
     "'"
   ];
 
-  escapeContent = content: lib.pipe content [
-    (mapContentText lib.escapeXML)
-    (setContentDataByPath [ "htmlMetadata" "escaped" ] true)
-  ];
+  # works perfectly for HTML as well
+  # (kinda obvious but felt worth noting)
+  escapeContent = content: mkRaw (mapContentText lib.escapeXML content);
+
+  /**
+    Return the input content as is (ie. without html escaping).
+    NOTE: there is no escaping so this can be dangerous if the content contains invalid html
+
+    # Inputs
+    `content`
+    : Content-like input
+
+    # Type
+    ```
+    mkRaw :: Content-like -> Content
+    ```
+  */
+  mkRaw = setContentDataByPath [ "htmlMetadata" "escaped" ] true;
 
   elementAttrsToContent = {
     name,
@@ -127,19 +139,7 @@ rec {
   addChecks = checks: element: element // { checks = element.checks ++ checks; };
   addCheck = check: element: addChecks [ check ];
 
-  /**
-    Return the input content as is (ie. without html escaping).
-
-    # Inputs
-    `content`
-    : Content-like input
-
-    # Type
-    ```
-    mkRaw :: Content-like -> Content
-    ```
-  */
-  mkRaw = content: setContentDataByPath [ "htmlMetadata" "escaped" ] true (mkContent content);
+  inherit mkRaw;
 
   # there are technically other ways to write the DOCTYPE
   # but this is the only non-legacy way specified by the
