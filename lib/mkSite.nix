@@ -204,7 +204,7 @@ pkgs.runCommand "site" {
       dir = "'$out'" . fullSitePath;
       exec("mkdir", [ "-p", exec("dirname", [ dir ], {}) ], {});
       if (haskey(content, "text")) {
-        print >dir, content.text;
+        printn >dir, content.text;
       }
       else { # haskey(content, "path")
         ${if dereferenceLinks
