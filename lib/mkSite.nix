@@ -4,14 +4,46 @@ pkgs:
 
 {
   /**
-    The page representing the root of the file heirarchy.
-    The set of pages produced in the result will be the set of
-    pages transitively referenced by this one.
+    The path representing the root of the file heirarchy.
 
-    Generally this will be `./site` where site contains a `default.nix`
+    Generally this will be something like `./site` where
+    ./site contains a hierarchy approximately representing
+    the result.
   */
   siteRoot,
+  /**
+    Extra arguments passed to the root mkPage when `getRootPages` is unset
+  */
   siteRootPageArgs ? {},
+
+  /**
+    A function taking page inputs and producing an attrset of
+    the root pages of the file heirarchy.
+    The set of pages produced in the result will be the set of
+    pages transitively referenced by these ones.
+
+    The resulting attrset's names are paths that the content specified
+    in the respective values will be created at.
+
+    This defaults to importing `siteRoot` as a page using args
+    from `siteRootPageArgs`.
+
+    # Example
+    ```nix
+    { extraArgs, ... }:
+    {
+      "/index.html" = ./site/index.nix;
+      "/other/resource.foo" = extraArgs.otherResource;
+      ...
+    }
+    ```
+  */
+  getRootPages ? { mkPage, ... }:
+    let
+      rootPage = mkPage ({ path = siteRoot; } // siteRootPageArgs);
+    in {
+      ${rootPage.fullSitePath} = rootPage.content;
+    },
 
   /**
     Allow `siteRoot` to be a store path.
@@ -76,19 +108,11 @@ let
   fh-libWithInputs = withInputs inputs;
 
 
-  inherit (fh-libWithInputs) equalContents mkContent mkPage;
-
-  rootPage =
-    assert lib.assertMsg (lib.path.hasStorePathPrefix fullSitePathRoot -> allowFullSitePathInStore) ''
-      `fullSitePathRoot` is a nix store path: '${toString fullSitePathRoot}'
-      So all page references will point to the nix store. This is probably a
-      mistake but if it is intentional enable `allowFullSitePathInStore` in mkSite
-    '';
-    mkPage ({ path = siteRoot; } // siteRootPageArgs);
+  inherit (fh-libWithInputs) equalContents mkContent;
 
   #TODO: maybe also record which pages referenced them
 
-  extractReferencedPages = { evaluatedPages ? {}, toBeEvaluatedPages ? {}, currentPage }:
+  extractReferencedPages' = { evaluatedPages ? {}, toBeEvaluatedPages ? {}, currentPage }:
   let
     content = mkContent currentPage.content;
 
@@ -119,26 +143,39 @@ let
       ))
       (builtins.mapAttrs (_fullSitePath: pages: (builtins.head pages).content))
     ];
-
-    nextPages = toBeEvaluatedPages // referencedPages;
-
-    nextPage = rec {
-      fullSitePath = builtins.head (builtins.attrNames nextPages);
-      content = nextPages.${fullSitePath};
-    };
-    next = {
-      evaluatedPages = evaluatedPages // {
-        ${currentPage.fullSitePath} = content;
-      };
-      toBeEvaluatedPages = builtins.removeAttrs nextPages [ nextPage.fullSitePath ];
-      currentPage = nextPage;
-    };
   in
-  if nextPages == {}
-  then next.evaluatedPages
-  else extractReferencedPages next;
+  extractReferencedPages {
+    evaluatedPages = evaluatedPages // {
+      ${currentPage.fullSitePath} = content;
+    };
+    toBeEvaluatedPages = toBeEvaluatedPages // referencedPages;
+  };
 
-  allPages = extractReferencedPages { currentPage = rootPage; };
+  extractReferencedPages = { evaluatedPages ? {}, toBeEvaluatedPages }:
+    if toBeEvaluatedPages == {} then
+      evaluatedPages
+    else
+      let
+        nextPage = rec {
+          fullSitePath = builtins.head (builtins.attrNames toBeEvaluatedPages);
+          content = toBeEvaluatedPages.${fullSitePath};
+        };
+      in
+      extractReferencedPages' {
+        inherit evaluatedPages;
+        toBeEvaluatedPages = builtins.removeAttrs toBeEvaluatedPages [ nextPage.fullSitePath ];
+        currentPage = nextPage;
+      };
+
+  allPages = extractReferencedPages {
+    toBeEvaluatedPages =
+      assert lib.assertMsg (lib.path.hasStorePathPrefix fullSitePathRoot -> allowFullSitePathInStore) ''
+        `fullSitePathRoot` is a nix store path: '${toString fullSitePathRoot}'
+        So all page references will point to the nix store. This is probably a
+        mistake but if it is intentional enable `allowFullSitePathInStore` in mkSite
+      '';
+      getRootPages inputs;
+  };
   allFullSitePaths = builtins.attrNames allPages;
 
   pageContents = builtins.mapAttrs (fullSitePath: content:
